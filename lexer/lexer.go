@@ -38,7 +38,7 @@ func NewLexer(src string) Lexer {
 	}
 }
 
-func (s *Lexer) ScanToken() ([]Token, []string) {
+func (s *Lexer) ScanTokens() ([]Token, []string) {
 	for !s.isAtEnd() {
 		s.start = s.current
 		s.scanToken()
@@ -107,6 +107,16 @@ func (s *Lexer) scanToken() {
 			for s.peek() != '\n' && !s.isAtEnd() {
 				s.advance()
 			}
+		} else if s.match('*') {
+			// skip block comment
+			for s.peek() != '*' || s.peekNext() != '/' {
+				skipChar := s.advance()
+				if skipChar == '\n' {
+					s.line += 1
+				}
+			}
+			s.advance()
+			s.advance()
 		} else {
 			s.addSingleToken(SLASH)
 		}
@@ -116,10 +126,8 @@ func (s *Lexer) scanToken() {
 		break
 	case '\n':
 		s.line += 1
-		break
 	case '"':
 		s.string()
-		break
 	default:
 		if isDigit(c) {
 			s.number()
@@ -186,7 +194,7 @@ func (s *Lexer) string() {
 	}
 
 	if s.isAtEnd() {
-		s.report("", fmt.Sprintf("Unterminated string"))
+		s.report("", "Unterminated string")
 		return
 	}
 
