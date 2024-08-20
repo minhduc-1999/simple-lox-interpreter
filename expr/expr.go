@@ -1,6 +1,9 @@
 package expr
 
-import "fmt"
+import (
+	"fmt"
+	"lox/lexer"
+)
 
 type Visitor interface {
 	visitBinary(*Binary) string
@@ -13,12 +16,9 @@ type Expr interface {
 	accept(Visitor) string
 }
 
-type Token struct {
-}
-
 type Binary struct {
 	Left     Expr
-	Operator string
+	Operator lexer.Token
 	Right    Expr
 }
 
@@ -43,7 +43,7 @@ func (b *Literal) accept(v Visitor) string {
 }
 
 type Unary struct {
-	Operator string
+	Operator lexer.Token
 	Right    Expr
 }
 

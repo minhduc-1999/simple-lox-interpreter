@@ -1,6 +1,7 @@
 package expr
 
 import (
+	"lox/lexer"
 	"testing"
 )
 
@@ -18,12 +19,12 @@ func TestAstPrinter_PrintExpr(t *testing.T) {
 			args: args{
 				expr: &Binary{
 					Left: &Unary{
-						Operator: "-",
+						Operator: lexer.NewToken(lexer.MINUS, "", "", 0),
 						Right: &Literal{
 							Value: 123,
 						},
 					},
-					Operator: "*",
+					Operator: lexer.NewToken(lexer.STAR, "", "", 0),
 					Right: &Grouping{
 						Expression: &Literal{
 							Value: 45.67,
@@ -43,18 +44,18 @@ func TestAstPrinter_PrintExpr(t *testing.T) {
 								Left: &Literal{
 									Value: 12,
 								},
-								Operator: "+",
+								Operator: lexer.NewToken(lexer.PLUS, "", "", 0),
 								Right: &Literal{
 									Value: "x",
 								},
 							},
 						},
-						Operator: "-",
+						Operator: lexer.NewToken(lexer.MINUS, "", "", 0),
 						Right: &Literal{
 							Value: 123,
 						},
 					},
-					Operator: "*",
+					Operator: lexer.NewToken(lexer.STAR, "", "", 0),
 					Right: &Grouping{
 						Expression: &Literal{
 							Value: 45.67,
