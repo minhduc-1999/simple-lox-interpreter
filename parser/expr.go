@@ -1,4 +1,4 @@
-package expr
+package parser
 
 import (
 	"fmt"
@@ -17,9 +17,17 @@ type Expr interface {
 }
 
 type Binary struct {
-	Left     Expr
-	Operator lexer.Token
-	Right    Expr
+	left     Expr
+	operator lexer.Token
+	right    Expr
+}
+
+func NewBinary(left Expr, operator lexer.Token, right Expr) *Binary {
+	return &Binary{
+		left:     left,
+		operator: operator,
+		right:    right,
+	}
 }
 
 func (b *Binary) accept(v Visitor) string {
@@ -27,7 +35,13 @@ func (b *Binary) accept(v Visitor) string {
 }
 
 type Grouping struct {
-	Expression Expr
+	expression Expr
+}
+
+func NewGrouping(expr Expr) *Grouping {
+	return &Grouping{
+		expression: expr,
+	}
 }
 
 func (b *Grouping) accept(v Visitor) string {
@@ -35,7 +49,13 @@ func (b *Grouping) accept(v Visitor) string {
 }
 
 type Literal struct {
-	Value any
+	value any
+}
+
+func NewLiteral(value any) *Literal {
+	return &Literal{
+		value: value,
+	}
 }
 
 func (b *Literal) accept(v Visitor) string {
@@ -43,8 +63,15 @@ func (b *Literal) accept(v Visitor) string {
 }
 
 type Unary struct {
-	Operator lexer.Token
-	Right    Expr
+	operator lexer.Token
+	right    Expr
+}
+
+func NewUnary(operator lexer.Token, right Expr) *Unary {
+	return &Unary{
+		operator: operator,
+		right:    right,
+	}
 }
 
 func (b *Unary) accept(v Visitor) string {
@@ -59,17 +86,17 @@ func (a *AstPrinter) PrintExpr(expr Expr) string {
 }
 
 func (a *AstPrinter) visitBinary(expr *Binary) string {
-	return fmt.Sprintf("%v %v %v", expr.Left.accept(a), expr.Operator, expr.Right.accept(a))
+	return fmt.Sprintf("%v %v %v", expr.left.accept(a), expr.operator, expr.right.accept(a))
 }
 
 func (a *AstPrinter) visitGrouping(expr *Grouping) string {
-	return fmt.Sprintf("(%v)", expr.Expression.accept(a))
+	return fmt.Sprintf("(%v)", expr.expression.accept(a))
 }
 
 func (a *AstPrinter) visitLiteral(expr *Literal) string {
-	return fmt.Sprintf("%v", expr.Value)
+	return fmt.Sprintf("%v", expr.value)
 }
 
 func (a *AstPrinter) visitUnary(expr *Unary) string {
-	return fmt.Sprintf("%v%v", expr.Operator, expr.Right.accept(a))
+	return fmt.Sprintf("%v%v", expr.operator, expr.right.accept(a))
 }

@@ -7,6 +7,14 @@ type Token struct {
 	line      int
 }
 
+func (t Token) TokenType() TokenType {
+	return t.tokenType
+}
+
+func (t Token) Literal() any {
+	return t.literal
+}
+
 func NewToken(tokenType TokenType, lexeme string, literal string, line int) Token {
 	return Token{
 		tokenType,

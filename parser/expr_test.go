@@ -1,4 +1,4 @@
-package expr
+package parser
 
 import (
 	"lox/lexer"
@@ -18,16 +18,16 @@ func TestAstPrinter_PrintExpr(t *testing.T) {
 			name: "case 1",
 			args: args{
 				expr: &Binary{
-					Left: &Unary{
-						Operator: lexer.NewToken(lexer.MINUS, "", "", 0),
-						Right: &Literal{
-							Value: 123,
+					left: &Unary{
+						operator: lexer.NewToken(lexer.MINUS, "", "", 0),
+						right: &Literal{
+							value: 123,
 						},
 					},
-					Operator: lexer.NewToken(lexer.STAR, "", "", 0),
-					Right: &Grouping{
-						Expression: &Literal{
-							Value: 45.67,
+					operator: lexer.NewToken(lexer.STAR, "", "", 0),
+					right: &Grouping{
+						expression: &Literal{
+							value: 45.67,
 						},
 					},
 				},
@@ -38,27 +38,27 @@ func TestAstPrinter_PrintExpr(t *testing.T) {
 			name: "case 2",
 			args: args{
 				expr: &Binary{
-					Left: &Binary{
-						Left: &Grouping{
-							Expression: &Binary{
-								Left: &Literal{
-									Value: 12,
+					left: &Binary{
+						left: &Grouping{
+							expression: &Binary{
+								left: &Literal{
+									value: 12,
 								},
-								Operator: lexer.NewToken(lexer.PLUS, "", "", 0),
-								Right: &Literal{
-									Value: "x",
+								operator: lexer.NewToken(lexer.PLUS, "", "", 0),
+								right: &Literal{
+									value: "x",
 								},
 							},
 						},
-						Operator: lexer.NewToken(lexer.MINUS, "", "", 0),
-						Right: &Literal{
-							Value: 123,
+						operator: lexer.NewToken(lexer.MINUS, "", "", 0),
+						right: &Literal{
+							value: 123,
 						},
 					},
-					Operator: lexer.NewToken(lexer.STAR, "", "", 0),
-					Right: &Grouping{
-						Expression: &Literal{
-							Value: 45.67,
+					operator: lexer.NewToken(lexer.STAR, "", "", 0),
+					right: &Grouping{
+						expression: &Literal{
+							value: 45.67,
 						},
 					},
 				},
