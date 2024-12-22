@@ -1,6 +1,10 @@
 package parser
 
-import "lox/lexer"
+import (
+	"errors"
+	"fmt"
+	"lox/lexer"
+)
 
 type Parser struct {
 	tokens  []lexer.Token
@@ -14,77 +18,107 @@ func NewParser(tokens []lexer.Token) Parser {
 	}
 }
 
-func (p *Parser) expression() Expr {
+func (p *Parser) expression() (Expr, error) {
 	return p.equality()
 }
 
-func (p *Parser) equality() Expr {
-	expr := p.comparison()
+func (p *Parser) equality() (Expr, error) {
+	expr, err := p.comparison()
+	if err != nil {
+		return nil, err
+	}
 	for p.match(lexer.BANG, lexer.BANG_EQUAL) {
 		operator := p.previous()
-		right := p.comparison()
+		right, err := p.comparison()
+		if err != nil {
+			return nil, err
+		}
 		expr = NewBinary(expr, operator, right)
 	}
-	return expr
+	return expr, nil
 }
 
-func (p *Parser) comparison() Expr {
-	expr := p.term()
+func (p *Parser) comparison() (Expr, error) {
+	expr, err := p.term()
+	if err != nil {
+		return nil, err
+	}
 	for p.match(lexer.GREATER, lexer.GREATER_EQUAL, lexer.LESS, lexer.LESS_EQUAL) {
 		op := p.previous()
-		right := p.term()
+		right, err := p.term()
+		if err != nil {
+			return nil, err
+		}
 		expr = NewBinary(expr, op, right)
 	}
-	return expr
+	return expr, nil
 }
 
-func (p *Parser) term() Expr {
-	expr := p.factor()
+func (p *Parser) term() (Expr, error) {
+	expr, err := p.factor()
+	if err != nil {
+		return nil, err
+	}
 	for p.match(lexer.MINUS, lexer.PLUS) {
 		op := p.previous()
-		right := p.factor()
+		right, err := p.factor()
+		if err != nil {
+			return nil, err
+		}
 		expr = NewBinary(expr, op, right)
 	}
-	return expr
+	return expr, nil
 }
 
-func (p *Parser) factor() Expr {
-	expr := p.unary()
+func (p *Parser) factor() (Expr, error) {
+	expr, err := p.unary()
+	if err != nil {
+		return nil, err
+	}
 	for p.match(lexer.SLASH, lexer.STAR) {
 		op := p.previous()
-		right := p.unary()
+		right, err := p.unary()
+		if err != nil {
+			return nil, err
+		}
 		expr = NewBinary(expr, op, right)
 	}
-	return expr
+	return expr, nil
 }
 
-func (p *Parser) unary() Expr {
+func (p *Parser) unary() (Expr, error) {
 	if p.match(lexer.BANG, lexer.MINUS) {
 		op := p.previous()
-		right := p.unary()
-		return NewUnary(op, right)
+		right, err := p.unary()
+		if err != nil {
+			return nil, err
+		}
+		return NewUnary(op, right), nil
 	}
 	return p.primary()
 }
 
-func (p *Parser) primary() Expr {
+func (p *Parser) primary() (Expr, error) {
 	if p.match(lexer.FALSE) {
-		return NewLiteral(false)
+		return NewLiteral(false), nil
 	}
 	if p.match(lexer.TRUE) {
-		return NewLiteral(true)
+		return NewLiteral(true), nil
 	}
 	if p.match(lexer.NIL) {
-		return NewLiteral(nil)
+		return NewLiteral(nil), nil
 	}
 	if p.match(lexer.NUMBER, lexer.STRING) {
-		return NewLiteral(p.previous().Literal())
+		return NewLiteral(p.previous().Literal()), nil
 	}
 	if p.match(lexer.LEFT_PAREN) {
-		expr := p.expression()
-		return NewGrouping(expr)
+		expr, err := p.expression()
+		if err != nil {
+			return nil, err
+		}
+		return NewGrouping(expr), nil
 	}
-	return nil
+	return nil, fmt.Errorf("not expected expression: %v", p.peek())
 }
 
 func (p Parser) previous() lexer.Token {
@@ -95,7 +129,7 @@ func (p Parser) peek() lexer.Token {
 	return p.tokens[p.current]
 }
 
-func (p Parser) match(tokenTypes ...lexer.TokenType) bool {
+func (p *Parser) match(tokenTypes ...lexer.TokenType) bool {
 	if p.isAtEnd() {
 		return false
 	}
@@ -124,4 +158,53 @@ func (p *Parser) advance() lexer.Token {
 
 func (p Parser) isAtEnd() bool {
 	return p.peek().TokenType() == lexer.EOF
+}
+
+func (p *Parser) consume(t lexer.TokenType, msg string) (lexer.Token, error) {
+	if p.check(t) {
+		return p.advance(), nil
+	}
+	return lexer.Token{}, errors.New(msg)
+}
+
+func (p Parser) error(token lexer.Token, msg string) error {
+	if token.TokenType() == lexer.EOF {
+		return fmt.Errorf("line %v at end %v", token.Line(), msg)
+	}
+	return fmt.Errorf("line at %v, %v", token.Line(), msg)
+}
+
+func (p Parser) report(line int, where string, msg string) {
+	fmt.Printf("[line %d] Error %v: %v", line, where, msg)
+}
+
+func (p *Parser) synchronize() {
+	p.advance()
+	for !p.isAtEnd() {
+		if p.previous().TokenType() == lexer.SEMICOLON {
+			return
+		}
+		switch p.peek().TokenType() {
+		case lexer.CLASS:
+		case lexer.FUN:
+		case lexer.VAR:
+		case lexer.FOR:
+		case lexer.IF:
+		case lexer.WHILE:
+		case lexer.RETURN:
+		case lexer.PRINT:
+			return
+		}
+		p.advance()
+	}
+}
+
+func (p *Parser) Parse() Expr {
+	result, err := p.expression()
+	if err != nil {
+		// TODO: enter panic mode
+		fmt.Printf("%v\n", err)
+		return nil
+	}
+	return result
 }

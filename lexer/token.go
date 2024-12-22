@@ -7,6 +7,10 @@ type Token struct {
 	line      int
 }
 
+func (t Token) Line() int {
+	return t.line
+}
+
 func (t Token) TokenType() TokenType {
 	return t.tokenType
 }

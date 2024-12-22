@@ -6,14 +6,14 @@ import (
 )
 
 type Visitor interface {
-	visitBinary(*Binary) string
-	visitGrouping(*Grouping) string
-	visitLiteral(*Literal) string
-	visitUnary(*Unary) string
+	visitBinary(*Binary) (any, error)
+	visitGrouping(*Grouping) (any, error)
+	visitLiteral(*Literal) (any, error)
+	visitUnary(*Unary) (any, error)
 }
 
 type Expr interface {
-	accept(Visitor) string
+	accept(Visitor) (any, error)
 }
 
 type Binary struct {
@@ -30,7 +30,7 @@ func NewBinary(left Expr, operator lexer.Token, right Expr) *Binary {
 	}
 }
 
-func (b *Binary) accept(v Visitor) string {
+func (b *Binary) accept(v Visitor) (any, error) {
 	return v.visitBinary(b)
 }
 
@@ -44,7 +44,7 @@ func NewGrouping(expr Expr) *Grouping {
 	}
 }
 
-func (b *Grouping) accept(v Visitor) string {
+func (b *Grouping) accept(v Visitor) (any, error) {
 	return v.visitGrouping(b)
 }
 
@@ -58,7 +58,7 @@ func NewLiteral(value any) *Literal {
 	}
 }
 
-func (b *Literal) accept(v Visitor) string {
+func (b *Literal) accept(v Visitor) (any, error) {
 	return v.visitLiteral(b)
 }
 
@@ -74,7 +74,7 @@ func NewUnary(operator lexer.Token, right Expr) *Unary {
 	}
 }
 
-func (b *Unary) accept(v Visitor) string {
+func (b *Unary) accept(v Visitor) (any, error) {
 	return v.visitUnary(b)
 }
 
@@ -82,21 +82,42 @@ type AstPrinter struct {
 }
 
 func (a *AstPrinter) PrintExpr(expr Expr) string {
-	return expr.accept(a)
+	val, err := expr.accept(a)
+	if err != nil {
+		// TODO
+		return fmt.Sprintf("error %v", err)
+	}
+	return fmt.Sprintf("%v", val)
 }
 
-func (a *AstPrinter) visitBinary(expr *Binary) string {
-	return fmt.Sprintf("%v %v %v", expr.left.accept(a), expr.operator, expr.right.accept(a))
+func (a *AstPrinter) visitBinary(expr *Binary) (any, error) {
+	leftVal, err := expr.left.accept(a)
+	if err != nil {
+		return nil, err
+	}
+	rightVal, err := expr.right.accept(a)
+	if err != nil {
+		return nil, err
+	}
+	return fmt.Sprintf("%v %v %v", leftVal, expr.operator, rightVal), nil
 }
 
-func (a *AstPrinter) visitGrouping(expr *Grouping) string {
-	return fmt.Sprintf("(%v)", expr.expression.accept(a))
+func (a *AstPrinter) visitGrouping(expr *Grouping) (any, error) {
+	val, err := expr.expression.accept(a)
+	if err != nil {
+		return nil, err
+	}
+	return fmt.Sprintf("(%v)", val), nil
 }
 
-func (a *AstPrinter) visitLiteral(expr *Literal) string {
-	return fmt.Sprintf("%v", expr.value)
+func (a *AstPrinter) visitLiteral(expr *Literal) (any, error) {
+	return fmt.Sprintf("%v", expr.value), nil
 }
 
-func (a *AstPrinter) visitUnary(expr *Unary) string {
-	return fmt.Sprintf("%v%v", expr.operator, expr.right.accept(a))
+func (a *AstPrinter) visitUnary(expr *Unary) (any, error) {
+	val, err := expr.right.accept(a)
+	if err != nil {
+		return nil, err
+	}
+	return fmt.Sprintf("%v%v", expr.operator, val), nil
 }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"lox/lexer"
+	"lox/parser"
 	"os"
 )
 
@@ -54,5 +55,11 @@ func run(s string) {
 		for _, token := range tokens {
 			fmt.Println(fmt.Sprintf("%#v", token))
 		}
+	}
+	a := parser.NewParser(tokens)
+	expr := a.Parse()
+	printer := parser.AstPrinter{}
+	if expr != nil {
+		fmt.Printf("%v", printer.PrintExpr(expr))
 	}
 }
